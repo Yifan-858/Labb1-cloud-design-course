@@ -427,4 +427,11 @@ az webapp config backup update \
 
 ```bash
 az webapp config backup show \
-  --resource-group RG-Yifan-Wang-a9e4da-Dot
+  --resource-group YOUR-RESOURCE-GROUP-NAME
+```
+should see :
+```bash
+`"backupSchedule": {
+    "frequencyInterval": 1,
+    "frequencyUnit": "Day",`
+```
