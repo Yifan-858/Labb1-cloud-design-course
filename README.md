@@ -204,7 +204,68 @@ builder.Configuration.AddAzureKeyVault(
 ```
 
 ## Step 15 Create pipeline and use the yaml file example
-(your YAML unchanged as provided in original lab)
+
+```bash
+# Vilken branch som triggar pipelinen eller none= manuell start
+trigger:
+- main
+
+# Skapar en virtuell maskin med en windows image
+# För self-hosted byt ut wmImage mot name: 'Namnet_DinAgentPool' 
+pool:
+  vmImage: windows-latest
+
+# En variabel med värde som kan användas flera gånger
+variables:
+  buildConfiguration: 'Release'
+
+# De olika stegen (steps och tasks) i skriptet (hämta kod-förbered-bygg-deploya)
+steps:
+
+# Hämta koden från samma repo(self) som YAML filen ligger i. För self-hosted lägg
+# även till clean: true . Ny rad efter checkout. Det rensar tidigare körning
+- checkout: self
+
+# Installera .NET SDK och välj .NET 10 (x=alla versioner av den)
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '10.x'
+
+# Restore av dependencies
+- task: DotNetCoreCLI@2
+  displayName: Restore
+  inputs:
+    command: 'restore'
+    projects: '\*_/_.csproj'
+
+# Gör build av projekt
+- task: DotNetCoreCLI@2
+  displayName: Build
+  inputs:
+    command: 'build'
+    projects: '\*_/_.csproj'
+    arguments: '--configuration $(buildConfiguration)'
+
+# Publisera web app (skapa artifact i ArtifactStagingDirectory)
+- task: DotNetCoreCLI@2
+  displayName: Publish
+  inputs:
+    command: 'publish'
+    publishWebProjects: true
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    zipAfterPublish: true
+
+# Deploya till Azure Web App (hämta från ArtifactStagingDirectory). För self
+# hosted skall det se ut så här package: '$(Build.ArtifactStagingDirectory)
+- task: AzureWebApp@1
+  displayName: Deploy
+  inputs:
+    azureSubscription: 'CloudLabb1Connection'<YourProjectConnection>
+    appType: 'webapp'
+    appName: 'CommunityWebApi'
+    package: '$(Build.ArtifactStagingDirectory)/\*_/_.zip'
+```
 
 ## Step 16 Set up Environment Variable for the webapp service
 
